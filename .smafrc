@@ -1,0 +1,9 @@
+{
+    "project": "Weather",
+    "appid": "com.infamous.weather",
+    "description": "Weather display",
+    "dimensions": "1920x1080",
+    "token": "jeuXn14NQb57oPyekVwm1FHMhFgnzEwe",
+    "dist": "src",
+    "packages": "packages"
+}

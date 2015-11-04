@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Weather</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" type="text/css" href="styles/main.css"></link>
+    <link rel="stylesheet" type="text/css" href="styles/grid.css"></link>
+    <link rel="stylesheet" type="text/css" href="styles/spinner.css"></link>
+
+    <script type="text/javascript" src="js/vendor/smaf.js"></script>
+</head>
+
+<body>
+
+<!-- Loading panel -->
+<div id="loading">
+    <div class="element">
+        <div class="spinner">
+            <div class="bounce1"></div>
+            <div class="bounce2"></div>
+            <div class="bounce3"></div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Weather -->
+<div id="weather" class="hidden">
+    <div class="section group">
+        <div class="col-5 center">
+            <h1 id="city"></h1>
+        </div>
+    </div>
+    <div class="section group">
+        <div id="left" class="col col-1 center">
+            <img class="element" src="img/left.svg" style="width: 100%;">
+        </div>
+        <div id="day0" class="col col-1 center">
+        </div>
+        <div id="day1" class="col col-1 center">
+        </div>
+        <div id="day2" class="col col-1 center">
+        </div>
+        <div id="day3" class="col col-1 center">
+        </div>
+        <div id="day4" class="col col-1 center">
+        </div>
+        <div id="right" class="col col-1 center">
+            <img class="element" src="img/right.svg" style="width: 100%;">
+            </dvi>
+        </div>
+    </div>
+    <div class="footer">
+        <p>Powered by Open Weather Map</p>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+
+    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    var STORAGE_KEY = 'weather.locations'; //key to use for storing current cities in local storage
+
+    var API_KEY = 'bd8e44ca535da13821265237e7e47a06'; // Open Weather Map API KEY
+    var BASE_URL = 'http://api.openweathermap.org/data/2.5/forecast/daily?';
+
+    //Default values
+    var DEFAULT_CITIES = [
+        {'lat': 53.3478, 'long': -6.2674937},
+        {'lat': 37.9753357, 'long': 23.7361497},
+        {'lat': 39.90403, 'long': 116.407526}
+    ];
+
+
+    var cities; //cities to display
+    var currentCity = 0; //Use first city
+
+    /**
+     * Gets data from URL and passes response to provided callback.
+     * @param url the url to call
+     * @param callback the callback to invoke upon successfully reading URL.
+     */
+    function get(url, callback) {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function () {
+            if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+                callback(xmlHttp.responseText);
+            }
+        }
+        xmlHttp.open("GET", url, true); // true for asynchronous
+        xmlHttp.send(null);
+    }
+
+    /**
+     * Builds URL for retrieving weather info.
+     * @param city an object containing the latitude and longitude of the city.
+     * @returns {string} the URL to call for retrieving the weather.
+     */
+    function buildUrl(city) {
+        return BASE_URL + 'lat=' + city.lat + '&lon=' + city.long + '&units=metric&appId=' + API_KEY;
+    }
+
+    function loadWeather() {
+        document.getElementById('loading').className = '';
+        document.getElementById('weather').className = 'hidden';
+        var target = buildUrl(cities[currentCity]);
+        get(target, function (result) {
+            var data = JSON.parse(result);
+            var i = 0;
+            document.getElementById('city').innerHTML = '5 day forecast for ' + data.city.name;
+            for (i = 0; i < 5; i++) {
+                var item = document.getElementById('day' + i);
+                var weather = data.list[i];
+                var date = new Date(weather.dt * 1000);
+                item.innerHTML = '<p><b>' + MONTHS[date.getMonth()] + ' ' + date.getDate() + '</b></p>'
+                        + '<p><img style="width:100%;" src="img/' + weather.weather[0].icon + '.svg"></p>'
+                        + '<p>' + weather.weather[0].main + '</p>'
+                        + '<p>High: ' + weather.temp.max + ' C</p>'
+                        + '<p>Low: ' + weather.temp.min + ' C</p>';
+            }
+
+            document.getElementById('loading').className = 'hidden';
+            document.getElementById('weather').className = '';
+        });
+    }
+
+    Smaf.ready(function () {
+
+        console.log('Retrieving stored cities');
+        Smaf.storage().getItem(STORAGE_KEY).then(function (value) {
+            cities = value == null ? DEFAULT_CITIES : value;
+        }, function (err) {
+            cities = DEFAULT_CITIES;
+        }).then(function () {
+            loadWeather();
+        });
+
+
+        Smaf.on('notifications', function(evt) {
+            cities.push(evt.payload);
+            Smaf.storage().setItem(STORAGE_KEY, cities, function(err, value) {
+                // Do other things once the value has been saved.
+                console.log(value);
+            });
+        });
+
+        Smaf.on('action', function (evt) {
+            //Act only on key up
+            if (evt.type === 'keyDown') {
+                return;
+            }
+
+            if (evt.command == 'LEFT') {
+                currentCity--;
+                currentCity = currentCity < 0 ? cities.length - 1 : currentCity;
+                loadWeather();
+            } else if (evt.command == 'RIGHT') {
+                currentCity++;
+                currentCity = currentCity > cities.length - 1 ? 0 : currentCity;
+                loadWeather();
+            }
+
+        });
+    });
+
+    Smaf.init('jeuXn14NQb57oPyekVwm1FHMhFgnzEwe');
+</script>
+</body>
+</html>
+

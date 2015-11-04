@@ -1,0 +1,9 @@
+{
+    "project": "15 Puzzle",
+    "appid": "com.infamous.15puzzle",
+    "description": "Some description",
+    "dimensions": "1920x1080",
+    "token": "<token>",
+    "dist": "src",
+    "packages": "packages"
+}
